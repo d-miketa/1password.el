@@ -39,17 +39,23 @@
   :group 'tools)
 
 (defcustom 1password-op-executable "op"
-  "The 1Password command-line tool."
+  "The 1Password command line tool."
   :group '1password
   :type 'string)
 
 (defvar 1password-token nil
   "Session token automatically expires after 30 minutes of inactivity.")
 
+(defcustom 1password-config-dir "~/.config/op"
+  "The directory for 1Password configurations."
+  :group '1password
+  :type 'string)
+
 ;;;###autoload
 (defun 1password-login (password)
+  "Log into 1Password using your master PASSWORD."
   (interactive (list (read-passwd "1Password Master Password: ")))
-  (unless (file-exists-p "~/.op/config")
+  (unless (file-exists-p (expand-file-name "config" 1password-config-dir))
     (user-error "Please sign in from the command line for the first time, \
 see https://support.1password.com/command-line-getting-started/#get-started-with-the-command-line-tool"))
   (with-temp-buffer
@@ -60,6 +66,7 @@ see https://support.1password.com/command-line-getting-started/#get-started-with
 (defvar 1password-items nil)
 
 (defun 1password--json-read ()
+  "Read 1Password JSON."
   (let ((json-object-type 'alist)
         (json-array-type  'list)
         (json-key-type    'symbol)
@@ -78,6 +85,7 @@ see https://support.1password.com/command-line-getting-started/#get-started-with
           (error "'op list items' failed: %s" (buffer-string))))))
 
 (defun 1password--read-name ()
+  "Read 1Password name."
   (let ((completion-ignore-case t))
     (completing-read "Name: "
                      (mapcar (lambda (item) (let-alist item .overview.title))
@@ -103,7 +111,7 @@ see https://support.1password.com/command-line-getting-started/#get-started-with
 
 ;;;###autoload
 (defun 1password-get-password (name &optional copy)
-  "Return password of the NAME item."
+  "Return password of the NAME item. If COPY, yank to clipboard."
   (interactive (list (1password--read-name) t))
   (when (string= "" name)
     (user-error "Name can't be emtpy"))
